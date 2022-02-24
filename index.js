@@ -68,7 +68,7 @@ const addEntry = async (entry) => {
   try {
     const response = await notion.pages.create({
       parent: {
-        database_id: "5bcccede470b44e797c749cd03b3740b",
+        database_id: process.env.NOTION_TARGET_DATABASE_ID,
       },
       properties: entry,
     });
