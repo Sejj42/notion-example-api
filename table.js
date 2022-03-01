@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { Client } from "@notionhq/client";
 import util from "util";
+import fetch from "node-fetch";
 
 const notion = new Client({ auth: process.env.NOTION_KEY });
 const THE_YEAR = "2022";
@@ -129,9 +130,6 @@ const arrayOfEntriesGenerator = async (tasksPerUser) => {
   };
 
   const arrayOfAllEntries = tasksPerUser.map((entry) => {
-    console.log("below is single entry");
-    console.log(util.inspect(entry, false, null, true /* enable colors */));
-
     return {
       Name: {
         title: [
@@ -167,23 +165,25 @@ const arrayOfEntriesGenerator = async (tasksPerUser) => {
   return arrayOfAllEntries;
 };
 
-const entryAdder = async (arrayOfAllEntries) => {
-  for (const entry of arrayOfAllEntries) {
-    await addEntry(entry);
-  }
+const entryAdder = async (sprintId, arrayOfAllEntries) => {
+  await arrayOfAllEntries.forEach((entry) => addSingleEntry(sprintId, entry));
+  // for (const entry of arrayOfAllEntries) {
+  //   await addSingleEntry(sprintId, entry);
+  // }
 };
 
-const addEntry = async (entry) => {
+const addSingleEntry = async (sprintId, entry) => {
   try {
     const response = await notion.pages.create({
       parent: {
-        database_id: process.env.NOTION_NEW_TARGET_DATABASE_ID,
+        database_id: sprintId,
       },
       properties: entry,
     });
     console.log(response);
     console.log("Success! Entry added.");
   } catch (error) {
+    console.log("error is in addSingleEntry");
     console.error(error);
   }
 };
@@ -199,9 +199,11 @@ const theFunction = async () => {
   const userArray = await getUserArray(dataOfOnlyLatestSprint);
   const tasksPerUser = await getTasksPerUser(userArray, dataOfOnlyLatestSprint);
   const arrayOfAllEntries = await arrayOfEntriesGenerator(tasksPerUser);
-  await entryAdder(arrayOfAllEntries);
-  const sprintEntry = await checkIfSprintTableAlreadyExists(latestSprint);
-  await addNewSprintEntry(sprintEntry);
+  const sprintId = await createSprintDBTemplate(latestSprint);
+  await entryAdder(sprintId, arrayOfAllEntries);
+
+  // const sprintEntry = await checkIfSprintTableAlreadyExists(latestSprint);
+  // await addNewSprintEntry(sprintEntry);
 
   return "success";
 };
@@ -246,26 +248,60 @@ const checkIfSprintTableAlreadyExists = async (latestSprint) => {
   }
 };
 
-const addNewSprintEntry = async (sprintEntry) => {
-  try {
-    const response = await notion.pages.create({
-      parent: {
-        database_id: process.env.NOTION_BIG_TARGET_DATABASE_ID,
-        // database_id: process.env.MARCH_FIRST_ALL_SPRINTS_STATS_LIST,
-      },
-      properties: sprintEntry,
-    });
-    console.log(util.inspect(response, false, null, true /* enable colors */));
-    console.log("Success! Sprint Full Table Entry added.");
-  } catch (error) {
-    console.error(error);
-  }
-};
+const createSprintDBTemplate = async (latestSprint) => {
+  const page = await notion.pages.retrieve({
+    page_id: process.env.NOTION_ALL_SPRINT_LIST_PAGE_ID,
+  });
 
-// const createSprintTheFunction = async () => {
-//   const sprintEntry = await checkIfSprintTableAlreadyExists("WW08 (2022)");
-//   console.log("i am in addNewSprint functino");
-//   await addNewSprintEntry(sprintEntry);
-// };
+  const body = {
+    parent: {
+      type: "page_id",
+      page_id: page.id,
+    },
+    title: [
+      {
+        type: "text",
+        text: {
+          content: latestSprint,
+          link: null,
+        },
+      },
+    ],
+    properties: {
+      Name: {
+        title: {},
+      },
+      Score: {
+        rich_text: {},
+      },
+      timeGaps: {
+        rich_text: {},
+      },
+    },
+  };
+
+  const options = {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Notion-Version": "2022-02-22",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.NOTION_KEY}`,
+    },
+    body: JSON.stringify(body),
+  };
+
+  const result = await fetch("https://api.notion.com/v1/databases", options)
+    .then((response) => response.json())
+    .then((response) => {
+      return response;
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+
+  const sprintId = result.id;
+  return sprintId;
+};
 
 theFunction();
