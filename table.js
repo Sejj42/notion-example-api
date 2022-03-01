@@ -167,9 +167,6 @@ const arrayOfEntriesGenerator = async (tasksPerUser) => {
 
 const entryAdder = async (sprintId, arrayOfAllEntries) => {
   await arrayOfAllEntries.forEach((entry) => addSingleEntry(sprintId, entry));
-  // for (const entry of arrayOfAllEntries) {
-  //   await addSingleEntry(sprintId, entry);
-  // }
 };
 
 const addSingleEntry = async (sprintId, entry) => {
@@ -183,7 +180,6 @@ const addSingleEntry = async (sprintId, entry) => {
     console.log(response);
     console.log("Success! Entry added.");
   } catch (error) {
-    console.log("error is in addSingleEntry");
     console.error(error);
   }
 };
@@ -213,7 +209,6 @@ const theFunction = async () => {
 };
 
 const checkIfSprintTableAlreadyExists = async (latestSprint) => {
-  console.log(latestSprint);
   const response = await notion.search({
     query: latestSprint,
     sort: {
@@ -223,11 +218,12 @@ const checkIfSprintTableAlreadyExists = async (latestSprint) => {
   });
 
   if (response.results.length) {
-    console.log(response.results[0].url);
-    console.log(`${latestSprint} already exists. Proceeding to create it.`);
+    console.log(
+      `${latestSprint} already exists in ${response.results[0].url}. Aborting process.`
+    );
     return true;
   } else {
-    console.log(`${latestSprint} DOES NOT exist. Aborting.`);
+    console.log(`${latestSprint} DOES NOT exist. Creating sprint database.`);
     return false;
   }
 };
