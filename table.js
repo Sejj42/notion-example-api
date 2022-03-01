@@ -199,13 +199,17 @@ const theFunction = async () => {
   const userArray = await getUserArray(dataOfOnlyLatestSprint);
   const tasksPerUser = await getTasksPerUser(userArray, dataOfOnlyLatestSprint);
   const arrayOfAllEntries = await arrayOfEntriesGenerator(tasksPerUser);
-  const sprintId = await createSprintDBTemplate(latestSprint);
-  await entryAdder(sprintId, arrayOfAllEntries);
 
-  // const sprintEntry = await checkIfSprintTableAlreadyExists(latestSprint);
-  // await addNewSprintEntry(sprintEntry);
-
-  return "success";
+  const doesSprintAlreadyExist = await checkIfSprintTableAlreadyExists(
+    latestSprint
+  );
+  if (!doesSprintAlreadyExist) {
+    const sprintId = await createSprintDBTemplate(latestSprint);
+    await entryAdder(sprintId, arrayOfAllEntries);
+    return "successfully done stuff";
+  } else {
+    return `${latestSprint} already exists.`;
+  }
 };
 
 const checkIfSprintTableAlreadyExists = async (latestSprint) => {
@@ -220,30 +224,10 @@ const checkIfSprintTableAlreadyExists = async (latestSprint) => {
 
   if (response.results.length) {
     console.log(response.results[0].url);
-    console.log(`${latestSprint} exists!`);
-    return {
-      Sprint: {
-        title: [
-          {
-            text: {
-              content: latestSprint,
-            },
-          },
-        ],
-      },
-      sprintURL: {
-        type: "rich_text",
-        rich_text: [
-          {
-            text: {
-              content: response.results[0].url,
-            },
-          },
-        ],
-      },
-    };
+    console.log(`${latestSprint} already exists. Proceeding to create it.`);
+    return true;
   } else {
-    console.log(`${latestSprint} DOES NOT exist`);
+    console.log(`${latestSprint} DOES NOT exist. Aborting.`);
     return false;
   }
 };

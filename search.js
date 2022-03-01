@@ -19,27 +19,28 @@ const checkIfSprintTableAlreadyExists = async (latestSprint) => {
     console.log(
       `${latestSprint} exists. Exactracting information and creating the sprint entry now.`
     );
-    return {
-      Sprint: {
-        title: [
-          {
-            text: {
-              content: latestSprint,
-            },
-          },
-        ],
-      },
-      sprintURL: {
-        type: "rich_text",
-        rich_text: [
-          {
-            text: {
-              content: response.results[0].url,
-            },
-          },
-        ],
-      },
-    };
+    return true;
+    // return {
+    //   Sprint: {
+    //     title: [
+    //       {
+    //         text: {
+    //           content: latestSprint,
+    //         },
+    //       },
+    //     ],
+    //   },
+    //   sprintURL: {
+    //     type: "rich_text",
+    //     rich_text: [
+    //       {
+    //         text: {
+    //           content: response.results[0].url,
+    //         },
+    //       },
+    //     ],
+    //   },
+    // };
   } else {
     console.log(`${latestSprint} DOES NOT exist`);
     return false;
